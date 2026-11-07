@@ -1,0 +1,11 @@
+SELECT *
+FROM products
+LIMIT 10;
+
+SELECT *
+FROM categories
+LIMIT 10;
+
+SELECT *
+FROM orders
+LIMIT 10;
