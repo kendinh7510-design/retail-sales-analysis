@@ -83,7 +83,7 @@ def load_categories(df):
     try:
         with conn.cursor() as cursor:
             for row in df.itertuples(index=False):
-                cursor.execute("""INSERT INTO categories (CategoryID,CategoryName)""" \
+                cursor.execute("""INSERT INTO categories (CategoryID, CategoryName)""" \
                 """ VALUES(%s,%s) ON CONFLICT (CategoryID)   DO NOTHING""" ,(row.CategoryID, row.CategoryName))
                 inserted_row += cursor.rowcount
 
@@ -96,17 +96,19 @@ def load_categories(df):
         conn.close()        
 def load_products(df):
     conn = connect_postgres()
-    inserted_row = 0
+    affected_rows = 0
     try:
         with conn.cursor() as cursor:
             for row in df.itertuples(index=False):
                 cursor.execute("""
                 INSERT INTO products (ProductID,ProductName,CategoryID) VALUES(%s,%s,%s)
-                  ON CONFLICT (ProductID) DO NOTHING ;
+                  ON CONFLICT (ProductID) DO UPDATE SET ProductName = EXCLUDED.ProductName , CategoryID = EXCLUDED.CategoryID 
+                  WHERE products.productname IS DISTINCT FROM EXCLUDED.productname
+                  OR products.categoryid IS DISTINCT FROM EXCLUDED.categoryid;
                   """, (row.ProductID,row.ProductName,row.CategoryID))
-                inserted_row += cursor.rowcount
+                affected_rows += cursor.rowcount
             conn.commit()
-            print(f"Line inserted: {inserted_row} ")
+            print(f"Rows affected: {affected_rows} ")
     except Exception:
             conn.rollback()
             raise 
@@ -122,8 +124,7 @@ if __name__ == "__main__" :
 
     product_df = extract_products(db_path)
     validated_products = validate_products(product_df, valid_cat_ids)
-    print(validated_products.shape)
-
-    load_products(validated_products)
-
    
+   
+    load_products(validated_products)
+    load_products(validated_products)
